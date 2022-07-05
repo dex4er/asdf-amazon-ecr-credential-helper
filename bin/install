@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z ${ASDF_INSTALL_TYPE+x} ]] && echo "ASDF_INSTALL_TYPE is required" && exit 1
+[[ -z ${ASDF_INSTALL_VERSION+x} ]] && echo "ASDF_INSTALL_VERSION is required" && exit 1
+[[ -z ${ASDF_INSTALL_PATH+x} ]] && echo "ASDF_INSTALL_PATH is required" && exit 1
+
+install() {
+	local install_type=$1
+	[[ ${install_type} != "version" ]] && echo "intall type, ${install_type}, is not supported" && exit 1
+
+	local version=$2
+	local install_path=$3
+
+	local bin_install_path="${install_path}/bin"
+
+	local platform
+	platform=$(uname | tr '[:upper:]' '[:lower:]')
+
+	local arch
+	arch=$(uname -m)
+	case "${arch}" in
+	x86_64) arch="amd64" ;;
+	aarch64) arch="arm64" ;;
+	esac
+
+	local download_url
+	download_url="https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/${version}/${platform}-${arch}/docker-credential-ecr-login"
+
+	local checksum_url
+	checksum_url="${download_url}.sha256"
+
+	mkdir -p "${bin_install_path}"
+
+	echo "Downloading amazon-ecr-credential-helper from ${download_url}"
+
+	pushd "${bin_install_path}" >/dev/null
+
+	curl -sL "${download_url}" -o "${bin_install_path}/docker-credential-ecr-login"
+	curl -sL "${checksum_url}" | sha256sum -c
+
+	chmod +x "${bin_install_path}/docker-credential-ecr-login"
+
+	popd >/dev/null
+}
+
+install "${ASDF_INSTALL_TYPE}" "${ASDF_INSTALL_VERSION}" "${ASDF_INSTALL_PATH}"
