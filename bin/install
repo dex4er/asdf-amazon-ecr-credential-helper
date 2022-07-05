@@ -40,9 +40,9 @@ install() {
 	curl -sL "${download_url}" -o "${bin_install_path}/docker-credential-ecr-login"
 
 	if command -v shasum >/dev/null; then
-    curl -sL "${checksum_url}" | shasum -a 256 -c
-	else if command -v sha256sum; then
-    curl -sL "${checksum_url}" | sha256sum -c
+		curl -sL "${checksum_url}" | shasum -a 256 -c
+	elif command -v sha256sum; then
+		curl -sL "${checksum_url}" | sha256sum -c
 	fi
 
 	chmod +x "${bin_install_path}/docker-credential-ecr-login"
