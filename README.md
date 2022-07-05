@@ -8,6 +8,8 @@
 
 ```shell
 asdf plugin-add amazon-ecr-credential-helper https://github.com/dex4er/asdf-amazon-ecr-credential-helper.git
+asdf install amazon-ecr-credential-helper latest
+asdf global amazon-ecr-credential-helper latest
 ```
 
 ## Use
