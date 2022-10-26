@@ -10,33 +10,24 @@ on:
     paths-ignore:
       - "**.md"
       - LICENSE
-  schedule:
-    # At 12:00 on Monday
-    - cron: 0 12 * * 1
 
 jobs:
   test:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
+        container:
+          - alpine:latest
+          - centos:latest
+          - ubuntu:latest
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+
+    container:
+      image: ${{ matrix.container }}
 
     steps:
       - name: Test plugin
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: docker-credential-ecr-login version
-
-  trunk:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Trunk Check
-        uses: trunk-io/trunk-action@v1.0.0
