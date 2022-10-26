@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - container: alpine:latest
-            preinstall: apk add bash curl git
+            preinstall: apk add bash coreutils curl git
           - container: centos:latest
             preinstall: dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos && dnf -y install git
           - container: ubuntu:latest
