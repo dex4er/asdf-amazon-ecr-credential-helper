@@ -16,10 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container:
-          - alpine:latest
-          - centos:latest
-          - ubuntu:latest
+        include:
+          - container: alpine:latest
+            preinstall: apk add git curl
+          - container: centos:latest
+            preinstall: dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos && dnf -y install git
+          - container: ubuntu:latest
+            preinstall: apt-get -y && apt-get -y install curl git
 
     runs-on: ubuntu-latest
 
@@ -27,6 +30,9 @@ jobs:
       image: ${{ matrix.container }}
 
     steps:
+      - name: Preinstall
+        run: ${{ matrix.preinstall }}
+
       - name: Test plugin
         uses: asdf-vm/actions/plugin-test@v1
         with:
