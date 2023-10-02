@@ -46,8 +46,6 @@ function install() {
 	local download_url="https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/${version}/${platform}-${arch}/${download_filename}"
 	local checksum_url="https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/${version}/${platform}-${arch}/${checksum_filename}"
 
-	set -x
-
 	echo "Downloading ${download_filename} from release ${prefix}${version} from ${download_url}"
 
 	mkdir -p "${tmp_download_dir}"
@@ -68,7 +66,6 @@ function install() {
 	cp -fp "${download_filename}" "${bin_install_path}/docker-credential-ecr-login"
 
 	popd >/dev/null
-	exit 1
 }
 
 install "${ASDF_INSTALL_TYPE}" "${ASDF_INSTALL_VERSION}" "${ASDF_INSTALL_PATH}"
