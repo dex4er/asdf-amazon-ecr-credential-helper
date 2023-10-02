@@ -33,7 +33,6 @@ function install() {
 	arch=$(uname -m)
 	case "${arch}" in
 	aarch64) arch=arm64 ;;
-	i?86) arch=386 ;;
 	x86_64) arch=amd64 ;;
 	esac
 
