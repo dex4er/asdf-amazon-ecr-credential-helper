@@ -1,51 +1,68 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+shopt -s inherit_errexit 2>/dev/null || true
 
 [[ -z ${ASDF_INSTALL_TYPE+x} ]] && echo "ASDF_INSTALL_TYPE is required" && exit 1
 [[ -z ${ASDF_INSTALL_VERSION+x} ]] && echo "ASDF_INSTALL_VERSION is required" && exit 1
 [[ -z ${ASDF_INSTALL_PATH+x} ]] && echo "ASDF_INSTALL_PATH is required" && exit 1
 
-install() {
-	local install_type=$1
-	[[ ${install_type} != "version" ]] && echo "intall type, ${install_type}, is not supported" && exit 1
+function s3_curl() {
+	curl -fLsS "$@"
+}
 
+function install() {
+	# set -x
+	local install_type=$1
+	[[ ${install_type} != "version" ]] && echo "install type, ${install_type}, is not supported" && exit 1
+
+	local prefix="v"
 	local version=$2
 	local install_path=$3
+
+	local tmp_download_dir
+
+	tmp_download_dir=$(mktemp -d -t asdf.XXXXXXXX)
 
 	local bin_install_path="${install_path}/bin"
 
 	local platform
-	platform=$(uname | tr '[:upper:]' '[:lower:]')
+	platform=$(uname -s | tr '[:upper:]' '[:lower:]')
 
 	local arch
 	arch=$(uname -m)
 	case "${arch}" in
-	x86_64) arch="amd64" ;;
-	aarch64) arch="arm64" ;;
+	aarch64) arch=arm64 ;;
+	x86_64) arch=amd64 ;;
 	esac
 
 	local download_url
-	download_url="https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/${version}/${platform}-${arch}/docker-credential-ecr-login"
-
 	local checksum_url
-	checksum_url="${download_url}.sha256"
+
+	local download_filename="docker-credential-ecr-login"
+	local checksum_filename="${download_filename}.sha256"
+
+	local download_url="https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/${version}/${platform}-${arch}/${download_filename}"
+	local checksum_url="https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/${version}/${platform}-${arch}/${checksum_filename}"
+
+	echo "Downloading ${download_filename} from release ${prefix}${version} from ${download_url}"
+
+	mkdir -p "${tmp_download_dir}"
+
+	pushd "${tmp_download_dir}" >/dev/null
+
+	s3_curl -H "Accept: application/octet-stream" -o docker-credential-ecr-login "${download_url}"
+
+	if command -v shasum >/dev/null; then
+		s3_curl -H "Accept: application/octet-stream" "${checksum_url}" | awk '$2 == "docker-credential-ecr-login" {print}' | shasum -a 256 -c
+	elif command -v sha256sum >/dev/null; then
+		s3_curl -H "Accept: application/octet-stream" "${checksum_url}" | awk '$2 == "docker-credential-ecr-login" {print}' | sha256sum -c
+	fi
 
 	mkdir -p "${bin_install_path}"
 
-	echo "Downloading amazon-ecr-credential-helper from ${download_url}"
-
-	pushd "${bin_install_path}" >/dev/null
-
-	curl -sL "${download_url}" -o "${bin_install_path}/docker-credential-ecr-login"
-
-	if command -v shasum >/dev/null; then
-		curl -sL "${checksum_url}" | shasum -a 256 -c
-	elif command -v sha256sum; then
-		curl -sL "${checksum_url}" | sha256sum -c
-	fi
-
-	chmod +x "${bin_install_path}/docker-credential-ecr-login"
+	chmod +x "${download_filename}"
+	cp -fp "${download_filename}" "${bin_install_path}/docker-credential-ecr-login"
 
 	popd >/dev/null
 }
